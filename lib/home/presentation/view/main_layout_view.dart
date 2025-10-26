@@ -1,6 +1,6 @@
-import 'package:catalog_admin/home/presentation/view/dashboard_view.dart';
-import 'package:catalog_admin/home/presentation/view/profile_view.dart';
+import 'package:catalog_admin/features/dashboard/presentation/view/dashboard_view.dart';
 import 'package:catalog_admin/home/presentation/view/widgets/app_bottom_navigator_bar_widget.dart';
+import 'package:catalog_admin/features/profile/presentation/view/profile_view.dart';
 import 'package:flutter/material.dart';
 
 class MainLayout extends StatefulWidget {
