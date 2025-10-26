@@ -15,15 +15,9 @@ abstract class SubscriptionRemoteDataSource {
 class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
   // TODO: Add Dio instance when backend is ready
 
-  @override
-  Future<List<SubscriptionModel>> getSubscriptions({
-    required String contentType,
-  }) async {
-    // TODO: Replace with actual API call
-    // final response = await _dio.get('/subscriptions/$contentType');
-
-    await Future.delayed(const Duration(seconds: 1));
-    return [
+  // In-memory storage grouped by content type
+  final Map<String, List<SubscriptionModel>> _storage = {
+    'Text Typing': [
       const SubscriptionModel(
         id: '1',
         country: 'Egypt',
@@ -42,7 +36,50 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
         currency: 'KWD',
         price: 15,
       ),
-    ];
+    ],
+    'Image': [
+      const SubscriptionModel(
+        id: '4',
+        country: 'Egypt',
+        currency: 'EGP',
+        price: 100,
+      ),
+      const SubscriptionModel(
+        id: '5',
+        country: 'UAE',
+        currency: 'AED',
+        price: 60,
+      ),
+    ],
+    'Voice': [
+      const SubscriptionModel(
+        id: '6',
+        country: 'Egypt',
+        currency: 'EGP',
+        price: 75,
+      ),
+    ],
+    'Video': [
+      const SubscriptionModel(
+        id: '7',
+        country: 'Egypt',
+        currency: 'EGP',
+        price: 150,
+      ),
+    ],
+  };
+
+  @override
+  Future<List<SubscriptionModel>> getSubscriptions({
+    required String contentType,
+  }) async {
+    // TODO: Replace with actual API call
+    // final response = await _dio.get('/subscriptions/$contentType');
+
+    await Future.delayed(const Duration(milliseconds: 500));
+
+    // Return a copy of the list for the content type, or empty list if not found
+    return List<SubscriptionModel>.from(_storage[contentType] ?? []);
   }
 
   @override
@@ -55,6 +92,9 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
     //   'subscriptions': subscriptions.map((s) => s.toJson()).toList(),
     // });
 
-    await Future.delayed(const Duration(seconds: 1));
+    await Future.delayed(const Duration(milliseconds: 500));
+
+    // Update the in-memory storage
+    _storage[contentType] = List<SubscriptionModel>.from(subscriptions);
   }
 }

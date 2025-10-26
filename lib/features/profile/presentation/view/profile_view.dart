@@ -114,7 +114,6 @@ class _ProfileViewBodyState extends State<ProfileViewBody> {
 
                         // Email Field
                         CustomTextFormField(
-                          hintStyle: const TextStyle(color: Colors.blue),
                           controller: _emailController,
                           labelWidget: Text(
                             'Login User',

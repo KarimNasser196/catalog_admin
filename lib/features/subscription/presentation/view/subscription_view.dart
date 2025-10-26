@@ -1,3 +1,4 @@
+import 'package:catalog_admin/core/common/custom_snackbar.dart';
 import 'package:catalog_admin/core/services/service_locator.dart';
 import 'package:catalog_admin/core/utils/image_assests.dart';
 import 'package:catalog_admin/features/subscription/domain/entities/subscription_entity.dart';
@@ -39,6 +40,11 @@ class _SubscriptionsViewBodyState extends State<_SubscriptionsViewBody> {
     'Oman',
     'Qatar',
     'Bahrain',
+    'Iraq',
+    'Palestine',
+    'Morocco',
+    'Algeria',
+    'Tunisia',
   ];
   final List<String> currencies = [
     'EGP',
@@ -50,6 +56,11 @@ class _SubscriptionsViewBodyState extends State<_SubscriptionsViewBody> {
     'OMR',
     'QAR',
     'BHD',
+    'IQD',
+    'ILS',
+    'MAD',
+    'DZD',
+    'TND',
   ];
 
   @override
@@ -63,6 +74,11 @@ class _SubscriptionsViewBodyState extends State<_SubscriptionsViewBody> {
   TextEditingController _getController(String id, int price) {
     if (!priceControllers.containsKey(id)) {
       priceControllers[id] = TextEditingController(text: price.toString());
+    } else {
+      // Update the controller text if price changed
+      if (priceControllers[id]!.text != price.toString()) {
+        priceControllers[id]!.text = price.toString();
+      }
     }
     return priceControllers[id]!;
   }
@@ -98,13 +114,31 @@ class _SubscriptionsViewBodyState extends State<_SubscriptionsViewBody> {
                       ),
                     ),
                     SizedBox(width: 15.w),
-                    Text(
-                      'Subscriptions',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 16.sp,
-                        fontWeight: FontWeight.w500,
-                      ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Subscriptions',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16.sp,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        SizedBox(height: 5.h),
+                        BlocBuilder<SubscriptionCubit, SubscriptionState>(
+                          builder: (context, state) {
+                            final cubit = context.read<SubscriptionCubit>();
+                            return Text(
+                              cubit.selectedContentType,
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.9),
+                                fontSize: 12.sp,
+                              ),
+                            );
+                          },
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -284,14 +318,28 @@ class _SubscriptionsViewBodyState extends State<_SubscriptionsViewBody> {
       child: BlocBuilder<SubscriptionCubit, SubscriptionState>(
         builder: (context, state) {
           if (state is SubscriptionLoading) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(
+              child: CircularProgressIndicator(color: Color(0xFFEF6823)),
+            );
           }
 
           if (state is SubscriptionError) {
             return Center(
-              child: Text(
-                state.message,
-                style: TextStyle(color: Colors.red, fontSize: 14.sp),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.error_outline,
+                    size: 60.sp,
+                    color: Colors.red.shade300,
+                  ),
+                  SizedBox(height: 10.h),
+                  Text(
+                    state.message,
+                    style: TextStyle(color: Colors.red, fontSize: 14.sp),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
               ),
             );
           }
@@ -299,9 +347,32 @@ class _SubscriptionsViewBodyState extends State<_SubscriptionsViewBody> {
           if (state is SubscriptionLoaded) {
             if (state.subscriptions.isEmpty) {
               return Center(
-                child: Text(
-                  'No subscriptions found',
-                  style: TextStyle(fontSize: 14.sp, color: Colors.grey),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.subscriptions_outlined,
+                      size: 80.sp,
+                      color: Colors.grey.shade300,
+                    ),
+                    SizedBox(height: 15.h),
+                    Text(
+                      'No Subscriptions Yet',
+                      style: TextStyle(
+                        fontSize: 16.sp,
+                        color: Colors.grey.shade600,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    SizedBox(height: 8.h),
+                    Text(
+                      'Add a new country to get started',
+                      style: TextStyle(
+                        fontSize: 12.sp,
+                        color: Colors.grey.shade500,
+                      ),
+                    ),
+                  ],
                 ),
               );
             }
@@ -324,6 +395,13 @@ class _SubscriptionsViewBodyState extends State<_SubscriptionsViewBody> {
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(8.r),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 3,
+                        offset: const Offset(0, 1),
+                      ),
+                    ],
                   ),
                   child: Row(
                     children: [
@@ -473,25 +551,27 @@ class _SubscriptionsViewBodyState extends State<_SubscriptionsViewBody> {
   Widget _buildAddCountryButton(BuildContext context) {
     return SizedBox(
       width: MediaQuery.of(context).size.width * 0.47,
-      child: ElevatedButton(
+      child: ElevatedButton.icon(
         onPressed: () {
           context.read<SubscriptionCubit>().addNewCountry();
+          showCustomSnackBar(context, 'New country added successfully!');
         },
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF5F5FF9),
-          padding: EdgeInsets.symmetric(vertical: 12.h),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20.r),
-          ),
-          elevation: 0,
-        ),
-        child: Text(
+        icon: const Icon(Icons.add, color: Colors.white),
+        label: Text(
           'Add New Country',
           style: TextStyle(
             color: Colors.white,
             fontSize: 12.sp,
             fontWeight: FontWeight.w600,
           ),
+        ),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFF5F5FF9),
+          padding: EdgeInsets.symmetric(vertical: 12.h),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20.r),
+          ),
+          elevation: 2,
         ),
       ),
     );
@@ -501,14 +581,12 @@ class _SubscriptionsViewBodyState extends State<_SubscriptionsViewBody> {
     return BlocConsumer<SubscriptionCubit, SubscriptionState>(
       listener: (context, state) {
         if (state is SubscriptionSaved) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'Pricing updated successfully for ${context.read<SubscriptionCubit>().selectedContentType}!',
-              ),
-              backgroundColor: Colors.green,
-            ),
+          showCustomSnackBar(
+            context,
+            'Pricing updated successfully for ${context.read<SubscriptionCubit>().selectedContentType}!',
           );
+        } else if (state is SubscriptionError) {
+          showCustomSnackBar(context, state.message, isError: true);
         }
       },
       builder: (context, state) {
@@ -529,7 +607,7 @@ class _SubscriptionsViewBodyState extends State<_SubscriptionsViewBody> {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8.r),
               ),
-              elevation: 0,
+              elevation: 2,
             ),
             child: isLoading
                 ? SizedBox(
