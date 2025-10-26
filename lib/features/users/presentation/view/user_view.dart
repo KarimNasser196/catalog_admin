@@ -1,5 +1,6 @@
 import 'package:catalog_admin/core/services/service_locator.dart';
 import 'package:catalog_admin/core/utils/image_assests.dart';
+import 'package:catalog_admin/features/payment/presentation/cubit/payment_cubit.dart';
 import 'package:catalog_admin/features/users/presentation/cubit/user_cubit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -136,7 +137,13 @@ class _UsersViewBody extends StatelessWidget {
                     fontWeight: FontWeight.w500,
                   ),
                 ),
-                const Icon(Icons.keyboard_arrow_down, color: Color(0xFF00796B)),
+                IconButton(
+                  icon: const Icon(
+                    Icons.keyboard_arrow_down,
+                    color: Color(0xFF00796B),
+                  ),
+                  onPressed: () {},
+                ),
               ],
             ),
           ),
