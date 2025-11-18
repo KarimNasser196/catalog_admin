@@ -1,3 +1,6 @@
+// ==================== SUBSCRIPTION MODEL - FIXED ====================
+// lib/subscription/data/models/subscription_model.dart
+
 import 'package:catalog_admin/features/subscription/domain/entities/subscription_entity.dart';
 
 class SubscriptionModel extends SubscriptionEntity {
@@ -10,28 +13,50 @@ class SubscriptionModel extends SubscriptionEntity {
   });
 
   factory SubscriptionModel.fromJson(Map<String, dynamic> json) {
+    // ✅ تأكد من معالجة country_code بشكل صحيح (قد يأتي كـ "+1" أو "1")
+    String countryCode = json['country_code']?.toString() ?? '';
+
+    // ✅ إزالة المسافات الزائدة
+    countryCode = countryCode.trim();
+
+    // ✅ إضافة + إذا لم تكن موجودة وليس فارغاً
+    if (countryCode.isNotEmpty && !countryCode.startsWith('+')) {
+      countryCode = '+$countryCode';
+    }
+
     return SubscriptionModel(
       id: json['id']?.toString() ?? '',
       country: json['name'] ?? '',
       currency: json['currency'] ?? '',
-      countryCode: json['country_code'] ?? '',
-      price: _parseInt(json['price']),
+      countryCode: countryCode,
+      price: _parsePrice(json['price']),
     );
   }
 
-  static int _parseInt(dynamic value) {
+  static int _parsePrice(dynamic value) {
     if (value == null) return 0;
     if (value is int) return value;
     if (value is double) return value.toInt();
-    if (value is String) return int.tryParse(value) ?? 0;
+    if (value is String) {
+      // ✅ إزالة الفواصل والمسافات
+      final cleaned = value.replaceAll(RegExp(r'[,\s]'), '');
+      final double? parsed = double.tryParse(cleaned);
+      return parsed?.toInt() ?? 0;
+    }
     return 0;
   }
 
   Map<String, dynamic> toJson() {
+    // ✅ إزالة + من country_code قبل الإرسال إذا كان الـ API يتوقعها بدونها
+    String apiCountryCode = countryCode;
+    if (apiCountryCode.startsWith('+')) {
+      apiCountryCode = apiCountryCode.substring(1);
+    }
+
     return {
       'name': country,
       'currency': currency,
-      'country_code': countryCode,
+      'country_code': apiCountryCode,
       'price': price,
     };
   }

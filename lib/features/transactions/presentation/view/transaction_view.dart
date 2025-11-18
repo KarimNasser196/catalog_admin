@@ -319,7 +319,7 @@ class _TransactionsViewBody extends StatelessWidget {
           color: const Color(0xFFE3F2FD),
           borderRadius: BorderRadius.circular(8.r),
           border: Border.all(
-            color: const Color(0xFFEF6823).withOpacity(0.2),
+            color: const Color(0xFFEF6823).withValues(alpha: 0.2),
             width: 1,
           ),
         ),
@@ -471,7 +471,7 @@ class _TransactionsViewBody extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12.r),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
+                        color: Colors.black.withValues(alpha: 0.05),
                         blurRadius: 4,
                         offset: const Offset(0, 2),
                       ),

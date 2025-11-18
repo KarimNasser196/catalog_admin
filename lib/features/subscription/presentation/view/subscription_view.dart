@@ -1,9 +1,9 @@
+// ==================== SUBSCRIPTION VIEW - FULLY FIXED ====================
 // lib/subscription/presentation/view/subscriptions_view.dart
 
 import 'package:catalog_admin/core/common/custom_snackbar.dart';
 import 'package:catalog_admin/core/services/service_locator.dart';
 import 'package:catalog_admin/core/utils/image_assests.dart';
-import 'package:catalog_admin/features/subscription/domain/entities/subscription_entity.dart';
 import 'package:catalog_admin/features/subscription/presentation/cubit/subscription_cubit.dart';
 import 'package:country_picker/country_picker.dart';
 import 'package:currency_picker/currency_picker.dart';
@@ -34,6 +34,7 @@ class _SubscriptionsViewBody extends StatefulWidget {
 
 class _SubscriptionsViewBodyState extends State<_SubscriptionsViewBody> {
   final Map<String, TextEditingController> priceControllers = {};
+  String? currentlySavingId;
 
   @override
   void dispose() {
@@ -46,9 +47,18 @@ class _SubscriptionsViewBodyState extends State<_SubscriptionsViewBody> {
   TextEditingController _getController(String id, int price) {
     if (!priceControllers.containsKey(id)) {
       priceControllers[id] = TextEditingController(text: price.toString());
+      // ✅ إضافة listener للـ controller
+      priceControllers[id]!.addListener(() {
+        final newPrice = int.tryParse(priceControllers[id]!.text) ?? 0;
+        context.read<SubscriptionCubit>().updatePrice(id, newPrice);
+      });
     } else {
-      if (priceControllers[id]!.text != price.toString()) {
-        priceControllers[id]!.text = price.toString();
+      // ✅ تحديث النص فقط إذا كان مختلفاً (لتجنب المشاكل)
+      final currentText = priceControllers[id]!.text;
+      final expectedText = price.toString();
+      if (currentText != expectedText &&
+          !priceControllers[id]!.selection.isValid) {
+        priceControllers[id]!.text = expectedText;
       }
     }
     return priceControllers[id]!;
@@ -73,7 +83,7 @@ class _SubscriptionsViewBodyState extends State<_SubscriptionsViewBody> {
           prefixIcon: const Icon(Icons.search),
           border: OutlineInputBorder(
             borderSide: BorderSide(
-              color: const Color(0xFFEF6823).withOpacity(0.2),
+              color: const Color(0xFFEF6823).withValues(alpha: 0.2),
             ),
           ),
         ),
@@ -103,155 +113,164 @@ class _SubscriptionsViewBodyState extends State<_SubscriptionsViewBody> {
     );
   }
 
-  void _showAddCountryDialog(BuildContext context) {
+  void _showAddCountryDialog(BuildContext parentContext) {
     String? selectedCountryName;
     String? selectedCountryCode;
     String? selectedCurrency;
 
     showDialog(
-      context: context,
-      builder: (dialogContext) => StatefulBuilder(
-        builder: (context, setState) {
-          return AlertDialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(15.r),
-            ),
-            title: Text(
-              'Add New Country',
-              style: TextStyle(
-                fontSize: 16.sp,
-                fontWeight: FontWeight.bold,
-                color: const Color(0xFFEF6823),
+      context: parentContext,
+      builder: (dialogContext) {
+        // ✅ استخدام parentContext بدلاً من dialogContext للـ cubit
+        final cubit = parentContext.read<SubscriptionCubit>();
+
+        return StatefulBuilder(
+          builder: (statefulContext, setState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15.r),
               ),
-            ),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Country Picker Button
-                InkWell(
-                  onTap: () {
-                    showCountryPicker(
-                      context: context,
-                      showPhoneCode: true,
-                      onSelect: (Country country) {
-                        setState(() {
-                          selectedCountryName = country.name;
-                          selectedCountryCode = country.phoneCode;
-                        });
-                      },
-                    );
-                  },
-                  child: Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 12.w,
-                      vertical: 14.h,
-                    ),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey.shade300),
-                      borderRadius: BorderRadius.circular(8.r),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          selectedCountryName ?? 'Select Country',
-                          style: TextStyle(
-                            fontSize: 14.sp,
-                            color: selectedCountryName != null
-                                ? Colors.black87
-                                : Colors.grey,
+              title: Text(
+                'Add New Country',
+                style: TextStyle(
+                  fontSize: 16.sp,
+                  fontWeight: FontWeight.bold,
+                  color: const Color(0xFFEF6823),
+                ),
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Country Picker Button
+                  InkWell(
+                    onTap: () {
+                      showCountryPicker(
+                        context: statefulContext,
+                        showPhoneCode: true,
+                        onSelect: (Country country) {
+                          setState(() {
+                            selectedCountryName = country.name;
+                            selectedCountryCode = country.phoneCode;
+                          });
+                        },
+                      );
+                    },
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 12.w,
+                        vertical: 14.h,
+                      ),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey.shade300),
+                        borderRadius: BorderRadius.circular(8.r),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            selectedCountryName ?? 'Select Country',
+                            style: TextStyle(
+                              fontSize: 14.sp,
+                              color: selectedCountryName != null
+                                  ? Colors.black87
+                                  : Colors.grey,
+                            ),
                           ),
-                        ),
-                        const Icon(Icons.arrow_drop_down),
-                      ],
+                          const Icon(Icons.arrow_drop_down),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-                SizedBox(height: 15.h),
+                  SizedBox(height: 15.h),
 
-                // Currency Picker Button
-                InkWell(
-                  onTap: () {
-                    showCurrencyPicker(
-                      context: context,
-                      onSelect: (Currency currency) {
-                        setState(() {
-                          selectedCurrency = currency.code;
-                        });
-                      },
-                    );
-                  },
-                  child: Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 12.w,
-                      vertical: 14.h,
-                    ),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey.shade300),
-                      borderRadius: BorderRadius.circular(8.r),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          selectedCurrency ?? 'Select Currency',
-                          style: TextStyle(
-                            fontSize: 14.sp,
-                            color: selectedCurrency != null
-                                ? Colors.black87
-                                : Colors.grey,
+                  // Currency Picker Button
+                  InkWell(
+                    onTap: () {
+                      showCurrencyPicker(
+                        context: statefulContext,
+                        onSelect: (Currency currency) {
+                          setState(() {
+                            selectedCurrency = currency.code;
+                          });
+                        },
+                      );
+                    },
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 12.w,
+                        vertical: 14.h,
+                      ),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey.shade300),
+                        borderRadius: BorderRadius.circular(8.r),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            selectedCurrency ?? 'Select Currency',
+                            style: TextStyle(
+                              fontSize: 14.sp,
+                              color: selectedCurrency != null
+                                  ? Colors.black87
+                                  : Colors.grey,
+                            ),
                           ),
-                        ),
-                        const Icon(Icons.arrow_drop_down),
-                      ],
+                          const Icon(Icons.arrow_drop_down),
+                        ],
+                      ),
                     ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  child: Text(
+                    'Cancel',
+                    style: TextStyle(color: Colors.grey, fontSize: 14.sp),
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    if (selectedCountryName != null &&
+                        selectedCountryCode != null &&
+                        selectedCurrency != null) {
+                      // ✅ استخدام cubit المحفوظ
+                      cubit.addNewCountry(
+                        selectedCountryName!,
+                        selectedCurrency!,
+                        selectedCountryCode!,
+                      );
+                      Navigator.pop(dialogContext);
+                      showCustomSnackBar(
+                        parentContext,
+                        'Country added successfully!',
+                      );
+                    } else {
+                      showCustomSnackBar(
+                        dialogContext,
+                        'Please select country and currency',
+                        isError: true,
+                      );
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF5F5FF9),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10.r),
+                    ),
+                  ),
+                  child: Text(
+                    'Add',
+                    style: TextStyle(fontSize: 14.sp, color: Colors.white),
                   ),
                 ),
               ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(dialogContext),
-                child: Text(
-                  'Cancel',
-                  style: TextStyle(color: Colors.grey, fontSize: 14.sp),
-                ),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  if (selectedCountryName != null &&
-                      selectedCountryCode != null &&
-                      selectedCurrency != null) {
-                    context.read<SubscriptionCubit>().addNewCountry(
-                      selectedCountryName!,
-                      selectedCurrency!,
-                      selectedCountryCode!,
-                    );
-                    Navigator.pop(dialogContext);
-                    showCustomSnackBar(context, 'Country added successfully!');
-                  } else {
-                    showCustomSnackBar(
-                      dialogContext,
-                      'Please select country and currency',
-                      isError: true,
-                    );
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF5F5FF9),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10.r),
-                  ),
-                ),
-                child: Text(
-                  'Add',
-                  style: TextStyle(fontSize: 14.sp, color: Colors.white),
-                ),
-              ),
-            ],
-          );
-        },
-      ),
+            );
+          },
+        );
+      },
     );
   }
 
@@ -279,8 +298,6 @@ class _SubscriptionsViewBodyState extends State<_SubscriptionsViewBody> {
                   ],
                 ),
               ),
-              SizedBox(height: 10.h),
-              _buildSaveButton(context),
             ],
           ),
         ),
@@ -329,7 +346,7 @@ class _SubscriptionsViewBodyState extends State<_SubscriptionsViewBody> {
                   Text(
                     cubit.selectedContentType,
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.9),
+                      color: Colors.white.withValues(alpha: 0.9),
                       fontSize: 12.sp,
                     ),
                   ),
@@ -358,7 +375,7 @@ class _SubscriptionsViewBodyState extends State<_SubscriptionsViewBody> {
             children: [
               _buildContentTypeButton(
                 context,
-                'Text Typing',
+                'Text',
                 ImageAssets.txtIcon,
                 ContentType.textTyping,
                 cubit.selectedContentType,
@@ -454,7 +471,7 @@ class _SubscriptionsViewBodyState extends State<_SubscriptionsViewBody> {
           Expanded(
             flex: 2,
             child: Text(
-              'Countries',
+              'Country',
               style: TextStyle(
                 fontSize: 11.sp,
                 fontWeight: FontWeight.bold,
@@ -484,6 +501,18 @@ class _SubscriptionsViewBodyState extends State<_SubscriptionsViewBody> {
               ),
             ),
           ),
+          SizedBox(
+            width: 70.w,
+            child: Text(
+              'Action',
+              style: TextStyle(
+                fontSize: 11.sp,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey.shade700,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
         ],
       ),
     );
@@ -491,7 +520,20 @@ class _SubscriptionsViewBodyState extends State<_SubscriptionsViewBody> {
 
   Widget _buildSubscriptionsList(BuildContext context) {
     return Expanded(
-      child: BlocBuilder<SubscriptionCubit, SubscriptionState>(
+      child: BlocConsumer<SubscriptionCubit, SubscriptionState>(
+        listener: (context, state) {
+          if (state is SubscriptionSaved) {
+            showCustomSnackBar(context, 'Price updated successfully!');
+            setState(() {
+              currentlySavingId = null;
+            });
+          } else if (state is SubscriptionError) {
+            showCustomSnackBar(context, state.message, isError: true);
+            setState(() {
+              currentlySavingId = null;
+            });
+          }
+        },
         builder: (context, state) {
           if (state is SubscriptionLoading) {
             return const Center(
@@ -499,7 +541,7 @@ class _SubscriptionsViewBodyState extends State<_SubscriptionsViewBody> {
             );
           }
 
-          if (state is SubscriptionError) {
+          if (state is SubscriptionError && currentlySavingId == null) {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -520,8 +562,12 @@ class _SubscriptionsViewBodyState extends State<_SubscriptionsViewBody> {
             );
           }
 
-          if (state is SubscriptionLoaded) {
-            if (state.subscriptions.isEmpty) {
+          if (state is SubscriptionLoaded || state is SubscriptionSaving) {
+            final subscriptions = state is SubscriptionLoaded
+                ? state.subscriptions
+                : context.read<SubscriptionCubit>().subscriptions;
+
+            if (subscriptions.isEmpty) {
               return Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -546,13 +592,14 @@ class _SubscriptionsViewBodyState extends State<_SubscriptionsViewBody> {
             }
 
             return ListView.builder(
-              itemCount: state.subscriptions.length,
+              itemCount: subscriptions.length,
               itemBuilder: (context, index) {
-                final subscription = state.subscriptions[index];
+                final subscription = subscriptions[index];
                 final controller = _getController(
                   subscription.id,
                   subscription.price,
                 );
+                final isSaving = currentlySavingId == subscription.id;
 
                 return Container(
                   padding: EdgeInsets.symmetric(
@@ -565,7 +612,7 @@ class _SubscriptionsViewBodyState extends State<_SubscriptionsViewBody> {
                     borderRadius: BorderRadius.circular(8.r),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
+                        color: Colors.black.withValues(alpha: (0.05)),
                         blurRadius: 3,
                         offset: const Offset(0, 1),
                       ),
@@ -681,22 +728,54 @@ class _SubscriptionsViewBodyState extends State<_SubscriptionsViewBody> {
                               contentPadding: EdgeInsets.symmetric(
                                 vertical: 8.h,
                               ),
-                              suffix: Text(
-                                subscription.currency,
-                                style: TextStyle(
-                                  fontSize: 9.sp,
-                                  color: Colors.grey.shade500,
-                                ),
-                              ),
                             ),
-                            onChanged: (value) {
-                              final price = int.tryParse(value) ?? 0;
-                              context.read<SubscriptionCubit>().updatePrice(
-                                subscription.id,
-                                price,
-                              );
-                            },
                           ),
+                        ),
+                      ),
+                      SizedBox(width: 6.w),
+
+                      // ✅ Update Button
+                      SizedBox(
+                        width: 70.w,
+                        child: ElevatedButton(
+                          onPressed: isSaving
+                              ? null
+                              : () {
+                                  setState(() {
+                                    currentlySavingId = subscription.id;
+                                  });
+                                  context
+                                      .read<SubscriptionCubit>()
+                                      .updateSingleCountry(subscription.id);
+                                },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF5F5FF9),
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 8.w,
+                              vertical: 8.h,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(6.r),
+                            ),
+                            minimumSize: Size.zero,
+                          ),
+                          child: isSaving
+                              ? SizedBox(
+                                  width: 12.w,
+                                  height: 12.h,
+                                  child: const CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : Text(
+                                  'Update',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 9.sp,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
                         ),
                       ),
                     ],
@@ -719,7 +798,7 @@ class _SubscriptionsViewBodyState extends State<_SubscriptionsViewBody> {
         onPressed: () => _showAddCountryDialog(context),
         icon: const Icon(Icons.add, color: Colors.white),
         label: Text(
-          'Add New Country',
+          'Add Country',
           style: TextStyle(
             color: Colors.white,
             fontSize: 12.sp,
@@ -735,54 +814,6 @@ class _SubscriptionsViewBodyState extends State<_SubscriptionsViewBody> {
           elevation: 2,
         ),
       ),
-    );
-  }
-
-  Widget _buildSaveButton(BuildContext context) {
-    return BlocConsumer<SubscriptionCubit, SubscriptionState>(
-      listener: (context, state) {
-        if (state is SubscriptionSaved) {
-          showCustomSnackBar(context, 'Pricing updated successfully!');
-        } else if (state is SubscriptionError) {
-          showCustomSnackBar(context, state.message, isError: true);
-        }
-      },
-      builder: (context, state) {
-        final cubit = context.read<SubscriptionCubit>();
-        final isLoading = state is SubscriptionSaving;
-
-        return SizedBox(
-          width: double.infinity,
-          child: ElevatedButton(
-            onPressed: isLoading ? null : () => cubit.saveChanges(),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFEF6823),
-              padding: EdgeInsets.symmetric(vertical: 12.h),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8.r),
-              ),
-              elevation: 2,
-            ),
-            child: isLoading
-                ? SizedBox(
-                    height: 20.h,
-                    width: 20.w,
-                    child: const CircularProgressIndicator(
-                      color: Colors.white,
-                      strokeWidth: 2,
-                    ),
-                  )
-                : Text(
-                    'Save Changes for ${cubit.selectedContentType}',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 13.sp,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-          ),
-        );
-      },
     );
   }
 }

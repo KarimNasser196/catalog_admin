@@ -1,4 +1,4 @@
-// ==================== REPOSITORY INTERFACE ====================
+// ==================== REPOSITORY INTERFACE - FIXED ====================
 // lib/subscription/domain/repositories/subscription_repository.dart
 
 import 'package:catalog_admin/core/errors/failure.dart';
@@ -10,8 +10,18 @@ abstract class SubscriptionRepository {
     required int typeId,
   });
 
-  Future<Either<Failure, void>> updateSubscriptions({
+  // ✅ تحديث سعر دولة واحدة فقط
+  Future<Either<Failure, void>> updateSingleCountryPrice({
+    required String countryId,
+    required int newPrice,
+  });
+
+  // ✅ إضافة دولة جديدة
+  Future<Either<Failure, SubscriptionEntity>> addNewCountry({
     required int typeId,
-    required List<SubscriptionEntity> subscriptions,
+    required String countryName,
+    required String currency,
+    required String countryCode,
+    required int price,
   });
 }

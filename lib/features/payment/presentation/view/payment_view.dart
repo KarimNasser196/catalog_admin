@@ -266,7 +266,7 @@ class _PaymentsViewBody extends StatelessWidget {
           color: const Color(0xFFE3F2FD),
           borderRadius: BorderRadius.circular(8.r),
           border: Border.all(
-            color: const Color(0xFF5F5FF9).withOpacity(0.2),
+            color: const Color(0xFF5F5FF9).withValues(alpha: 0.2),
             width: 1,
           ),
         ),

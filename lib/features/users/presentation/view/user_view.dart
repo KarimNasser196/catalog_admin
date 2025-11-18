@@ -4,6 +4,7 @@ import 'package:catalog_admin/core/services/service_locator.dart';
 import 'package:catalog_admin/core/utils/image_assests.dart';
 import 'package:catalog_admin/features/users/presentation/cubit/user_cubit.dart';
 import 'package:catalog_admin/features/users/presentation/cubit/user_state.dart';
+import 'package:country_picker/country_picker.dart'; // ✅ استيراد country_picker
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -105,17 +106,15 @@ class _UsersViewBody extends StatelessWidget {
       },
     );
   }
-  // استبدل دالة _buildFilters فقط في الـ UsersView
 
   Widget _buildFilters(BuildContext context) {
-    // ✅ استخدم BlocBuilder عشان الـ UI يتحدث مع كل تغيير
     return BlocBuilder<UserCubit, UserState>(
       builder: (context, state) {
         final cubit = context.read<UserCubit>();
 
         return Column(
           children: [
-            // Country Filter
+            // ✅ Country Filter - استخدام country_picker
             GestureDetector(
               onTap: () => _showCountryPicker(context),
               child: Container(
@@ -125,7 +124,7 @@ class _UsersViewBody extends StatelessWidget {
                   color: const Color(0xFFD1F1FF),
                   borderRadius: BorderRadius.circular(8.r),
                   border: Border.all(
-                    color: const Color(0xFF5F5FF9).withOpacity(0.2),
+                    color: const Color(0xFF5F5FF9).withValues(alpha: 0.2),
                     width: 1,
                   ),
                 ),
@@ -176,7 +175,6 @@ class _UsersViewBody extends StatelessWidget {
                   ),
                 ),
                 onChanged: (value) {
-                  // ✅ هنا بنعمل update للـ search query
                   cubit.updateSearchQuery(value);
                 },
               ),
@@ -187,84 +185,126 @@ class _UsersViewBody extends StatelessWidget {
     );
   }
 
-  // ✅ تأكد من دالة _showCountryPicker
-  Future<void> _showCountryPicker(BuildContext context) async {
+  // ✅ استخدام country_picker بدلاً من القائمة الثابتة
+  void _showCountryPicker(BuildContext context) {
     final cubit = context.read<UserCubit>();
 
-    final List<Map<String, String>> countries = [
-      {'name': 'All', 'flag': '🌍'},
-      {'name': 'Egypt', 'flag': '🇪🇬'},
-      {'name': 'Saudi Arabia', 'flag': '🇸🇦'},
-      {'name': 'UAE', 'flag': '🇦🇪'},
-      {'name': 'Kuwait', 'flag': '🇰🇼'},
-      {'name': 'Jordan', 'flag': '🇯🇴'},
-      {'name': 'Lebanon', 'flag': '🇱🇧'},
-      {'name': 'Oman', 'flag': '🇴🇲'},
-      {'name': 'Qatar', 'flag': '🇶🇦'},
-      {'name': 'Bahrain', 'flag': '🇧🇭'},
-      {'name': 'Iraq', 'flag': '🇮🇶'},
-      {'name': 'Palestine', 'flag': '🇵🇸'},
-      {'name': 'Morocco', 'flag': '🇲🇦'},
-      {'name': 'Algeria', 'flag': '🇩🇿'},
-      {'name': 'Tunisia', 'flag': '🇹🇳'},
-    ];
-
-    await showDialog(
+    // ✅ إضافة خيار "All Countries" يدوياً
+    showDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(
-          'Select Country',
-          style: TextStyle(
-            fontSize: 16.sp,
-            fontWeight: FontWeight.bold,
-            color: const Color(0xFF5F5FF9),
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: Text(
+            'Select Country',
+            style: TextStyle(
+              fontSize: 16.sp,
+              fontWeight: FontWeight.bold,
+              color: const Color(0xFF5F5FF9),
+            ),
           ),
-        ),
-        contentPadding: EdgeInsets.symmetric(vertical: 10.h),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: ListView.builder(
-            shrinkWrap: true,
-            itemCount: countries.length,
-            itemBuilder: (context, index) {
-              final country = countries[index];
-              final isSelected = cubit.selectedCountry == country['name'];
-
-              return ListTile(
-                leading: Text(
-                  country['flag']!,
-                  style: TextStyle(fontSize: 24.sp),
+          contentPadding: EdgeInsets.zero,
+          content: SizedBox(
+            width: double.maxFinite,
+            height: 400.h,
+            child: Column(
+              children: [
+                // ✅ خيار "All Countries"
+                ListTile(
+                  leading: Text('🌍', style: TextStyle(fontSize: 24.sp)),
+                  title: Text(
+                    'All Countries',
+                    style: TextStyle(
+                      fontSize: 14.sp,
+                      fontWeight: cubit.selectedCountry == 'All'
+                          ? FontWeight.bold
+                          : FontWeight.normal,
+                      color: cubit.selectedCountry == 'All'
+                          ? const Color(0xFF5F5FF9)
+                          : Colors.black,
+                    ),
+                  ),
+                  trailing: cubit.selectedCountry == 'All'
+                      ? Icon(
+                          Icons.check_circle,
+                          color: const Color(0xFF5F5FF9),
+                          size: 20.sp,
+                        )
+                      : null,
+                  onTap: () {
+                    cubit.updateCountry('All');
+                    Navigator.pop(dialogContext);
+                  },
                 ),
-                title: Text(
-                  country['name']!,
-                  style: TextStyle(
-                    fontSize: 14.sp,
-                    fontWeight: isSelected
-                        ? FontWeight.bold
-                        : FontWeight.normal,
-                    color: isSelected ? const Color(0xFF5F5FF9) : Colors.black,
+                Divider(height: 1.h, thickness: 1),
+
+                // ✅ زر لفتح country_picker
+                Expanded(
+                  child: Center(
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.pop(dialogContext); // إغلاق الـ Dialog الحالي
+
+                        // ✅ فتح country_picker
+                        showCountryPicker(
+                          context: context,
+                          showPhoneCode: false,
+                          countryListTheme: CountryListThemeData(
+                            flagSize: 25,
+                            backgroundColor: Colors.white,
+                            textStyle: TextStyle(
+                              fontSize: 14.sp,
+                              color: Colors.black87,
+                            ),
+                            bottomSheetHeight: 500.h,
+                            borderRadius: BorderRadius.only(
+                              topLeft: Radius.circular(20.r),
+                              topRight: Radius.circular(20.r),
+                            ),
+                            inputDecoration: InputDecoration(
+                              labelText: 'Search',
+                              hintText: 'Start typing to search',
+                              prefixIcon: const Icon(Icons.search),
+                              border: OutlineInputBorder(
+                                borderSide: BorderSide(
+                                  color: const Color(
+                                    0xFF5F5FF9,
+                                  ).withValues(alpha: 0.2),
+                                ),
+                              ),
+                            ),
+                          ),
+                          onSelect: (Country country) {
+                            // ✅ استخدام اسم الدولة فقط
+                            cubit.updateCountry(country.name);
+                          },
+                        );
+                      },
+                      icon: const Icon(Icons.public, color: Colors.white),
+                      label: Text(
+                        'Select from all countries',
+                        style: TextStyle(fontSize: 14.sp, color: Colors.white),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF5F5FF9),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 20.w,
+                          vertical: 12.h,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8.r),
+                        ),
+                      ),
+                    ),
                   ),
                 ),
-                trailing: isSelected
-                    ? Icon(
-                        Icons.check_circle,
-                        color: const Color(0xFF5F5FF9),
-                        size: 20.sp,
-                      )
-                    : null,
-                onTap: () {
-                  // ✅ هنا بنعمل update للـ country
-                  cubit.updateCountry(country['name']!);
-                  Navigator.pop(dialogContext);
-                },
-              );
-            },
+              ],
+            ),
           ),
-        ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(15.r),
-        ),
-      ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15.r),
+          ),
+        );
+      },
     );
   }
 
@@ -344,7 +384,7 @@ class _UsersViewBody extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12.r),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
+                        color: Colors.black.withValues(alpha: 0.05),
                         blurRadius: 4,
                         offset: const Offset(0, 2),
                       ),
@@ -374,7 +414,9 @@ class _UsersViewBody extends StatelessWidget {
                               vertical: 4.h,
                             ),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF5F5FF9).withOpacity(0.1),
+                              color: const Color(
+                                0xFF5F5FF9,
+                              ).withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(4.r),
                             ),
                             child: Text(
@@ -444,7 +486,7 @@ class _UsersViewBody extends StatelessWidget {
                             vertical: 4.h,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.green.withOpacity(0.1),
+                            color: Colors.green.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(4.r),
                           ),
                           child: Row(

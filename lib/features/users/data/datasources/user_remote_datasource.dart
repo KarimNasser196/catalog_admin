@@ -38,9 +38,6 @@ class UserRemoteDataSourceImpl implements UserRemoteDataSource {
       queryParameters['search'] = searchQuery;
     }
 
-    // ✅ اطبع الـ query parameters عشان تتأكد
-    print('🔍 Fetching users with params: $queryParameters');
-
     final response = await apiConsumer.get(
       EndPoint.adminUsers,
       queryParameters: queryParameters,
