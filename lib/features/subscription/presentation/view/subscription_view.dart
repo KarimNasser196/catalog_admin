@@ -1,8 +1,12 @@
+// lib/subscription/presentation/view/subscriptions_view.dart
+
 import 'package:catalog_admin/core/common/custom_snackbar.dart';
 import 'package:catalog_admin/core/services/service_locator.dart';
 import 'package:catalog_admin/core/utils/image_assests.dart';
 import 'package:catalog_admin/features/subscription/domain/entities/subscription_entity.dart';
 import 'package:catalog_admin/features/subscription/presentation/cubit/subscription_cubit.dart';
+import 'package:country_picker/country_picker.dart';
+import 'package:currency_picker/currency_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -30,38 +34,6 @@ class _SubscriptionsViewBody extends StatefulWidget {
 
 class _SubscriptionsViewBodyState extends State<_SubscriptionsViewBody> {
   final Map<String, TextEditingController> priceControllers = {};
-  final List<String> countries = [
-    'Egypt',
-    'Saudi Arabia',
-    'UAE',
-    'Kuwait',
-    'Jordan',
-    'Lebanon',
-    'Oman',
-    'Qatar',
-    'Bahrain',
-    'Iraq',
-    'Palestine',
-    'Morocco',
-    'Algeria',
-    'Tunisia',
-  ];
-  final List<String> currencies = [
-    'EGP',
-    'SAR',
-    'AED',
-    'KWD',
-    'JOD',
-    'LBP',
-    'OMR',
-    'QAR',
-    'BHD',
-    'IQD',
-    'ILS',
-    'MAD',
-    'DZD',
-    'TND',
-  ];
 
   @override
   void dispose() {
@@ -75,12 +47,212 @@ class _SubscriptionsViewBodyState extends State<_SubscriptionsViewBody> {
     if (!priceControllers.containsKey(id)) {
       priceControllers[id] = TextEditingController(text: price.toString());
     } else {
-      // Update the controller text if price changed
       if (priceControllers[id]!.text != price.toString()) {
         priceControllers[id]!.text = price.toString();
       }
     }
     return priceControllers[id]!;
+  }
+
+  void _showCountryPicker(BuildContext context, int index) {
+    showCountryPicker(
+      context: context,
+      showPhoneCode: true,
+      countryListTheme: CountryListThemeData(
+        flagSize: 25,
+        backgroundColor: Colors.white,
+        textStyle: TextStyle(fontSize: 14.sp, color: Colors.black87),
+        bottomSheetHeight: 500.h,
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(20.r),
+          topRight: Radius.circular(20.r),
+        ),
+        inputDecoration: InputDecoration(
+          labelText: 'Search',
+          hintText: 'Start typing to search',
+          prefixIcon: const Icon(Icons.search),
+          border: OutlineInputBorder(
+            borderSide: BorderSide(
+              color: const Color(0xFFEF6823).withOpacity(0.2),
+            ),
+          ),
+        ),
+      ),
+      onSelect: (Country country) {
+        context.read<SubscriptionCubit>().updateCountry(
+          index,
+          country.name,
+          country.phoneCode,
+        );
+      },
+    );
+  }
+
+  void _showCurrencyPicker(BuildContext context, int index) {
+    showCurrencyPicker(
+      context: context,
+      theme: CurrencyPickerThemeData(
+        flagSize: 25,
+        titleTextStyle: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold),
+        subtitleTextStyle: TextStyle(fontSize: 14.sp, color: Colors.grey),
+        bottomSheetHeight: 500.h,
+      ),
+      onSelect: (Currency currency) {
+        context.read<SubscriptionCubit>().updateCurrency(index, currency.code);
+      },
+    );
+  }
+
+  void _showAddCountryDialog(BuildContext context) {
+    String? selectedCountryName;
+    String? selectedCountryCode;
+    String? selectedCurrency;
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setState) {
+          return AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(15.r),
+            ),
+            title: Text(
+              'Add New Country',
+              style: TextStyle(
+                fontSize: 16.sp,
+                fontWeight: FontWeight.bold,
+                color: const Color(0xFFEF6823),
+              ),
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Country Picker Button
+                InkWell(
+                  onTap: () {
+                    showCountryPicker(
+                      context: context,
+                      showPhoneCode: true,
+                      onSelect: (Country country) {
+                        setState(() {
+                          selectedCountryName = country.name;
+                          selectedCountryCode = country.phoneCode;
+                        });
+                      },
+                    );
+                  },
+                  child: Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 12.w,
+                      vertical: 14.h,
+                    ),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey.shade300),
+                      borderRadius: BorderRadius.circular(8.r),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          selectedCountryName ?? 'Select Country',
+                          style: TextStyle(
+                            fontSize: 14.sp,
+                            color: selectedCountryName != null
+                                ? Colors.black87
+                                : Colors.grey,
+                          ),
+                        ),
+                        const Icon(Icons.arrow_drop_down),
+                      ],
+                    ),
+                  ),
+                ),
+                SizedBox(height: 15.h),
+
+                // Currency Picker Button
+                InkWell(
+                  onTap: () {
+                    showCurrencyPicker(
+                      context: context,
+                      onSelect: (Currency currency) {
+                        setState(() {
+                          selectedCurrency = currency.code;
+                        });
+                      },
+                    );
+                  },
+                  child: Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 12.w,
+                      vertical: 14.h,
+                    ),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey.shade300),
+                      borderRadius: BorderRadius.circular(8.r),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          selectedCurrency ?? 'Select Currency',
+                          style: TextStyle(
+                            fontSize: 14.sp,
+                            color: selectedCurrency != null
+                                ? Colors.black87
+                                : Colors.grey,
+                          ),
+                        ),
+                        const Icon(Icons.arrow_drop_down),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext),
+                child: Text(
+                  'Cancel',
+                  style: TextStyle(color: Colors.grey, fontSize: 14.sp),
+                ),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  if (selectedCountryName != null &&
+                      selectedCountryCode != null &&
+                      selectedCurrency != null) {
+                    context.read<SubscriptionCubit>().addNewCountry(
+                      selectedCountryName!,
+                      selectedCurrency!,
+                      selectedCountryCode!,
+                    );
+                    Navigator.pop(dialogContext);
+                    showCustomSnackBar(context, 'Country added successfully!');
+                  } else {
+                    showCustomSnackBar(
+                      dialogContext,
+                      'Please select country and currency',
+                      isError: true,
+                    );
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF5F5FF9),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10.r),
+                  ),
+                ),
+                child: Text(
+                  'Add',
+                  style: TextStyle(fontSize: 14.sp, color: Colors.white),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
   }
 
   @override
@@ -92,57 +264,7 @@ class _SubscriptionsViewBodyState extends State<_SubscriptionsViewBody> {
           padding: EdgeInsets.all(15.w),
           child: Column(
             children: [
-              Container(
-                padding: EdgeInsets.symmetric(vertical: 15.h, horizontal: 20.w),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFEF6823),
-                  borderRadius: BorderRadius.circular(15.r),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 50.w,
-                      height: 50.h,
-                      decoration: const BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        Icons.subscriptions,
-                        color: const Color(0xFFEF6823),
-                        size: 25.sp,
-                      ),
-                    ),
-                    SizedBox(width: 15.w),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Subscriptions',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 16.sp,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        SizedBox(height: 5.h),
-                        BlocBuilder<SubscriptionCubit, SubscriptionState>(
-                          builder: (context, state) {
-                            final cubit = context.read<SubscriptionCubit>();
-                            return Text(
-                              cubit.selectedContentType,
-                              style: TextStyle(
-                                color: Colors.white.withOpacity(0.9),
-                                fontSize: 12.sp,
-                              ),
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
+              _buildHeaderCard(),
               SizedBox(height: 10.h),
               Expanded(
                 child: Column(
@@ -163,6 +285,60 @@ class _SubscriptionsViewBodyState extends State<_SubscriptionsViewBody> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildHeaderCard() {
+    return BlocBuilder<SubscriptionCubit, SubscriptionState>(
+      builder: (context, state) {
+        final cubit = context.read<SubscriptionCubit>();
+        return Container(
+          padding: EdgeInsets.symmetric(vertical: 15.h, horizontal: 20.w),
+          decoration: BoxDecoration(
+            color: const Color(0xFFEF6823),
+            borderRadius: BorderRadius.circular(15.r),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 50.w,
+                height: 50.h,
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.subscriptions,
+                  color: const Color(0xFFEF6823),
+                  size: 25.sp,
+                ),
+              ),
+              SizedBox(width: 15.w),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Subscriptions',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  SizedBox(height: 5.h),
+                  Text(
+                    cubit.selectedContentType,
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.9),
+                      fontSize: 12.sp,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -364,14 +540,6 @@ class _SubscriptionsViewBodyState extends State<_SubscriptionsViewBody> {
                         fontWeight: FontWeight.w500,
                       ),
                     ),
-                    SizedBox(height: 8.h),
-                    Text(
-                      'Add a new country to get started',
-                      style: TextStyle(
-                        fontSize: 12.sp,
-                        color: Colors.grey.shade500,
-                      ),
-                    ),
                   ],
                 ),
               );
@@ -391,7 +559,7 @@ class _SubscriptionsViewBodyState extends State<_SubscriptionsViewBody> {
                     horizontal: 12.w,
                     vertical: 8.h,
                   ),
-                  margin: EdgeInsets.only(bottom: 6.h, right: 5.w),
+                  margin: EdgeInsets.only(bottom: 6.h),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(8.r),
@@ -405,94 +573,90 @@ class _SubscriptionsViewBodyState extends State<_SubscriptionsViewBody> {
                   ),
                   child: Row(
                     children: [
+                      // Country Picker
                       Expanded(
                         flex: 2,
-                        child: Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 8.w,
-                            vertical: 11.h,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.grey.shade50,
-                            borderRadius: BorderRadius.circular(6.r),
-                            border: Border.all(
-                              color: Colors.grey.shade300,
-                              width: 0.8,
+                        child: InkWell(
+                          onTap: () => _showCountryPicker(context, index),
+                          child: Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 8.w,
+                              vertical: 11.h,
                             ),
-                          ),
-                          child: DropdownButtonHideUnderline(
-                            child: DropdownButton<String>(
-                              value: subscription.country,
-                              isExpanded: true,
-                              isDense: true,
-                              items: countries.map((String country) {
-                                return DropdownMenuItem<String>(
-                                  value: country,
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade50,
+                              borderRadius: BorderRadius.circular(6.r),
+                              border: Border.all(
+                                color: Colors.grey.shade300,
+                                width: 0.8,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Expanded(
                                   child: Text(
-                                    country,
+                                    subscription.country,
                                     style: TextStyle(
                                       fontSize: 10.sp,
                                       color: Colors.grey.shade700,
                                     ),
+                                    overflow: TextOverflow.ellipsis,
                                   ),
-                                );
-                              }).toList(),
-                              onChanged: (String? newValue) {
-                                if (newValue != null) {
-                                  context
-                                      .read<SubscriptionCubit>()
-                                      .updateCountry(index, newValue);
-                                }
-                              },
+                                ),
+                                Icon(
+                                  Icons.arrow_drop_down,
+                                  size: 18.sp,
+                                  color: Colors.grey.shade600,
+                                ),
+                              ],
                             ),
                           ),
                         ),
                       ),
                       SizedBox(width: 6.w),
+
+                      // Currency Picker
                       Expanded(
                         flex: 2,
-                        child: Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 8.w,
-                            vertical: 11.h,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.grey.shade50,
-                            borderRadius: BorderRadius.circular(6.r),
-                            border: Border.all(
-                              color: Colors.grey.shade300,
-                              width: 0.8,
+                        child: InkWell(
+                          onTap: () => _showCurrencyPicker(context, index),
+                          child: Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 8.w,
+                              vertical: 11.h,
                             ),
-                          ),
-                          child: DropdownButtonHideUnderline(
-                            child: DropdownButton<String>(
-                              value: subscription.currency,
-                              isExpanded: true,
-                              isDense: true,
-                              items: currencies.map((String currency) {
-                                return DropdownMenuItem<String>(
-                                  value: currency,
-                                  child: Text(
-                                    currency,
-                                    style: TextStyle(
-                                      fontSize: 10.sp,
-                                      color: Colors.grey.shade700,
-                                    ),
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade50,
+                              borderRadius: BorderRadius.circular(6.r),
+                              border: Border.all(
+                                color: Colors.grey.shade300,
+                                width: 0.8,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  subscription.currency,
+                                  style: TextStyle(
+                                    fontSize: 10.sp,
+                                    color: Colors.grey.shade700,
                                   ),
-                                );
-                              }).toList(),
-                              onChanged: (String? newValue) {
-                                if (newValue != null) {
-                                  context
-                                      .read<SubscriptionCubit>()
-                                      .updateCurrency(index, newValue);
-                                }
-                              },
+                                ),
+                                Icon(
+                                  Icons.arrow_drop_down,
+                                  size: 18.sp,
+                                  color: Colors.grey.shade600,
+                                ),
+                              ],
                             ),
                           ),
                         ),
                       ),
                       SizedBox(width: 6.w),
+
+                      // Price Input
                       Expanded(
                         flex: 2,
                         child: Container(
@@ -552,10 +716,7 @@ class _SubscriptionsViewBodyState extends State<_SubscriptionsViewBody> {
     return SizedBox(
       width: MediaQuery.of(context).size.width * 0.47,
       child: ElevatedButton.icon(
-        onPressed: () {
-          context.read<SubscriptionCubit>().addNewCountry();
-          showCustomSnackBar(context, 'New country added successfully!');
-        },
+        onPressed: () => _showAddCountryDialog(context),
         icon: const Icon(Icons.add, color: Colors.white),
         label: Text(
           'Add New Country',
@@ -581,10 +742,7 @@ class _SubscriptionsViewBodyState extends State<_SubscriptionsViewBody> {
     return BlocConsumer<SubscriptionCubit, SubscriptionState>(
       listener: (context, state) {
         if (state is SubscriptionSaved) {
-          showCustomSnackBar(
-            context,
-            'Pricing updated successfully for ${context.read<SubscriptionCubit>().selectedContentType}!',
-          );
+          showCustomSnackBar(context, 'Pricing updated successfully!');
         } else if (state is SubscriptionError) {
           showCustomSnackBar(context, state.message, isError: true);
         }
@@ -596,11 +754,7 @@ class _SubscriptionsViewBodyState extends State<_SubscriptionsViewBody> {
         return SizedBox(
           width: double.infinity,
           child: ElevatedButton(
-            onPressed: isLoading
-                ? null
-                : () {
-                    cubit.saveChanges();
-                  },
+            onPressed: isLoading ? null : () => cubit.saveChanges(),
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFFEF6823),
               padding: EdgeInsets.symmetric(vertical: 12.h),

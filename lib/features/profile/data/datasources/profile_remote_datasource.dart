@@ -1,6 +1,9 @@
 // lib/profile/data/datasources/profile_remote_datasource.dart
 
+import 'package:catalog_admin/core/api/api_consumer.dart';
+import 'package:catalog_admin/core/api/end_ponits.dart';
 import 'package:catalog_admin/core/database/cache/cache_helper.dart';
+import 'package:catalog_admin/features/auth/domain/repositories/auth_repository.dart';
 
 abstract class ProfileRemoteDataSource {
   Future<void> updateProfile({required String email, required String password});
@@ -8,27 +11,38 @@ abstract class ProfileRemoteDataSource {
 
 class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {
   final CacheHelper cacheHelper;
+  final ApiConsumer apiConsumer;
+  final AuthRepository authRepository;
 
-  ProfileRemoteDataSourceImpl({required this.cacheHelper});
+  ProfileRemoteDataSourceImpl({
+    required this.cacheHelper,
+    required this.apiConsumer,
+    required this.authRepository,
+  });
 
   @override
   Future<void> updateProfile({
     required String email,
     required String password,
   }) async {
-    // TODO: Replace with actual API call
-    // Example:
-    // await dio.put(
-    //   '$baseUrl/profile/update',
-    //   data: {
-    //     'email': email,
-    //     'password': password,
-    //   },
-    // );
+    try {
+      // ✅ بيانات JSON مع _method
+      final data = {'_method': 'PUT', 'login': email, 'password': password};
 
-    await Future.delayed(const Duration(milliseconds: 800));
+      // ✅ استخدام POST (ليس PUT) مع JSON (ليس FormData)
+      await apiConsumer.post(
+        EndPoint.userProfile,
+        data: data,
+        isFormData: false, // ← مهم جداً: JSON وليس FormData
+      );
 
-    // Update local cache
-    await cacheHelper.saveData(key: 'user_email', value: email);
+      // تحديث الكاش
+      await cacheHelper.saveData(key: 'user_email', value: email);
+
+      // تسجيل الخروج بعد التحديث
+      await authRepository.logout();
+    } catch (e) {
+      rethrow;
+    }
   }
 }

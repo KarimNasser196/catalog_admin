@@ -1,3 +1,6 @@
+// ==================== CUBIT ====================
+// lib/subscription/presentation/cubit/subscription_cubit.dart
+
 import 'package:bloc/bloc.dart';
 import 'package:catalog_admin/features/subscription/domain/entities/subscription_entity.dart';
 import 'package:catalog_admin/features/subscription/domain/repositories/subscription_repository.dart';
@@ -14,131 +17,107 @@ class SubscriptionCubit extends Cubit<SubscriptionState> {
   List<SubscriptionEntity> subscriptions = [];
 
   Future<void> loadSubscriptions(String contentType) async {
-    print('🔄 Loading subscriptions for: $contentType');
+    selectedContentType = contentType;
+    final typeId = ContentType.getTypeId(contentType);
+
     emit(SubscriptionLoading());
 
-    final result = await repository.getSubscriptions(contentType: contentType);
+    final result = await repository.getSubscriptions(typeId: typeId);
 
     result.fold(
-      (error) {
-        print('❌ Error loading subscriptions: $error');
-        emit(SubscriptionError(message: error));
-      },
+      (failure) => emit(SubscriptionError(message: failure.message)),
       (loadedSubscriptions) {
-        print('✅ Loaded ${loadedSubscriptions.length} subscriptions');
         subscriptions = List<SubscriptionEntity>.from(loadedSubscriptions);
-        print('📋 Current subscriptions: ${subscriptions.length}');
         emit(SubscriptionLoaded(subscriptions: List.from(subscriptions)));
       },
     );
   }
 
   void selectContentType(String type) {
-    print('🔀 Selecting content type: $type');
     selectedContentType = type;
     loadSubscriptions(type);
   }
 
-  void updateCountry(int index, String newCountry) {
-    print('🌍 Updating country at index $index to $newCountry');
+  void updateCountry(int index, String newCountry, String newCode) {
     if (index >= 0 && index < subscriptions.length) {
       final oldSub = subscriptions[index];
-      // Create entirely new list
       subscriptions = List<SubscriptionEntity>.from(subscriptions);
       subscriptions[index] = SubscriptionEntity(
         id: oldSub.id,
         country: newCountry,
         currency: oldSub.currency,
+        countryCode: newCode,
         price: oldSub.price,
       );
-      print('✅ Country updated, emitting new state');
       emit(SubscriptionLoaded(subscriptions: List.from(subscriptions)));
     }
   }
 
   void updateCurrency(int index, String newCurrency) {
-    print('💱 Updating currency at index $index to $newCurrency');
     if (index >= 0 && index < subscriptions.length) {
       final oldSub = subscriptions[index];
-      // Create entirely new list
       subscriptions = List<SubscriptionEntity>.from(subscriptions);
       subscriptions[index] = SubscriptionEntity(
         id: oldSub.id,
         country: oldSub.country,
         currency: newCurrency,
+        countryCode: oldSub.countryCode,
         price: oldSub.price,
       );
-      print('✅ Currency updated, emitting new state');
       emit(SubscriptionLoaded(subscriptions: List.from(subscriptions)));
     }
   }
 
   void updatePrice(String id, int newPrice) {
-    print('💰 Updating price for id $id to $newPrice');
     final index = subscriptions.indexWhere((sub) => sub.id == id);
     if (index != -1) {
       final oldSub = subscriptions[index];
-      // Create entirely new list
       subscriptions = List<SubscriptionEntity>.from(subscriptions);
       subscriptions[index] = SubscriptionEntity(
         id: oldSub.id,
         country: oldSub.country,
         currency: oldSub.currency,
+        countryCode: oldSub.countryCode,
         price: newPrice,
       );
-      print('✅ Price updated, emitting new state');
       emit(SubscriptionLoaded(subscriptions: List.from(subscriptions)));
     }
   }
 
-  void addNewCountry() {
-    print('➕ Adding new country...');
-    print('📊 Before add - subscriptions count: ${subscriptions.length}');
-
+  void addNewCountry(String country, String currency, String countryCode) {
     final newId = DateTime.now().millisecondsSinceEpoch.toString();
     final newSubscription = SubscriptionEntity(
       id: newId,
-      country: 'Egypt',
-      currency: 'EGP',
-      price: 50,
+      country: country,
+      currency: currency,
+      countryCode: countryCode,
+      price: 0,
     );
 
-    // Create a completely new list
     subscriptions = List<SubscriptionEntity>.from(subscriptions)
       ..add(newSubscription);
 
-    print('📊 After add - subscriptions count: ${subscriptions.length}');
-    print(
-      '📋 Subscription list: ${subscriptions.map((s) => '${s.country}-${s.currency}').join(', ')}',
-    );
-
-    // Emit with brand new list
     emit(
       SubscriptionLoaded(
         subscriptions: List<SubscriptionEntity>.from(subscriptions),
       ),
     );
-    print('✅ State emitted with ${subscriptions.length} subscriptions');
   }
 
   Future<void> saveChanges() async {
-    print('💾 Saving ${subscriptions.length} subscriptions...');
+    final typeId = ContentType.getTypeId(selectedContentType);
+
     emit(SubscriptionSaving());
 
     final result = await repository.updateSubscriptions(
-      contentType: selectedContentType,
+      typeId: typeId,
       subscriptions: subscriptions,
     );
 
     result.fold(
-      (error) {
-        print('❌ Error saving: $error');
-        emit(SubscriptionError(message: error));
-      },
+      (failure) => emit(SubscriptionError(message: failure.message)),
       (_) {
-        print('✅ Saved successfully!');
         emit(SubscriptionSaved());
-        // Wait a tiny bit then reload to show saved data
         Future.delayed(const Duration(milliseconds: 100), () {
           emit(SubscriptionLoaded(subscriptions: List.from(subscriptions)));
         });

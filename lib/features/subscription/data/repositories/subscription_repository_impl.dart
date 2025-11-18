@@ -1,5 +1,8 @@
-// ========== subscription_repository_impl.dart ==========
+// ==================== REPOSITORY IMPLEMENTATION ====================
+// lib/subscription/data/repositories/subscription_repository_impl.dart
 
+import 'package:catalog_admin/core/errors/exceptions.dart';
+import 'package:catalog_admin/core/errors/failure.dart';
 import 'package:catalog_admin/features/subscription/data/datasources/subscription_remote_datasource.dart';
 import 'package:catalog_admin/features/subscription/data/models/subscription_model.dart';
 import 'package:catalog_admin/features/subscription/domain/entities/subscription_entity.dart';
@@ -12,22 +15,24 @@ class SubscriptionRepositoryImpl implements SubscriptionRepository {
   SubscriptionRepositoryImpl({required this.remoteDataSource});
 
   @override
-  Future<Either<String, List<SubscriptionEntity>>> getSubscriptions({
-    required String contentType,
+  Future<Either<Failure, List<SubscriptionEntity>>> getSubscriptions({
+    required int typeId,
   }) async {
     try {
       final subscriptions = await remoteDataSource.getSubscriptions(
-        contentType: contentType,
+        typeId: typeId,
       );
       return Right(subscriptions);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.errorMessageModel.errorMessage));
     } catch (e) {
-      return Left('Failed to load subscriptions: ${e.toString()}');
+      return Left(ServerFailure(e.toString()));
     }
   }
 
   @override
-  Future<Either<String, void>> updateSubscriptions({
-    required String contentType,
+  Future<Either<Failure, void>> updateSubscriptions({
+    required int typeId,
     required List<SubscriptionEntity> subscriptions,
   }) async {
     try {
@@ -37,18 +42,21 @@ class SubscriptionRepositoryImpl implements SubscriptionRepository {
               id: s.id,
               country: s.country,
               currency: s.currency,
+              countryCode: s.countryCode,
               price: s.price,
             ),
           )
           .toList();
 
       await remoteDataSource.updateSubscriptions(
-        contentType: contentType,
+        typeId: typeId,
         subscriptions: models,
       );
       return const Right(null);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.errorMessageModel.errorMessage));
     } catch (e) {
-      return Left('Failed to update subscriptions: ${e.toString()}');
+      return Left(ServerFailure(e.toString()));
     }
   }
 }

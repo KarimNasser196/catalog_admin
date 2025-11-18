@@ -1,6 +1,9 @@
+// lib/users/presentation/view/user_view.dart
+
 import 'package:catalog_admin/core/services/service_locator.dart';
 import 'package:catalog_admin/core/utils/image_assests.dart';
 import 'package:catalog_admin/features/users/presentation/cubit/user_cubit.dart';
+import 'package:catalog_admin/features/users/presentation/cubit/user_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -30,63 +33,7 @@ class _UsersViewBody extends StatelessWidget {
           padding: EdgeInsets.all(15.w),
           child: Column(
             children: [
-              Container(
-                padding: EdgeInsets.symmetric(vertical: 15.h, horizontal: 20.w),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF5F5FF9),
-                  borderRadius: BorderRadius.circular(15.r),
-                ),
-                child: Row(
-                  children: [
-                    CircleAvatar(
-                      backgroundColor: Colors.white,
-                      radius: 30.r,
-                      child: Image.asset(
-                        ImageAssets.contactIcon,
-                        height: 40.h,
-                        width: 40.w,
-                        color: const Color(0xFF5F5FF9),
-                      ),
-                    ),
-                    SizedBox(width: 15.w),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Users',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 14.sp,
-                          ),
-                        ),
-                        SizedBox(height: 10.h),
-                        BlocBuilder<UserCubit, UserState>(
-                          builder: (context, state) {
-                            if (state is UserLoaded) {
-                              return Text(
-                                '${state.users.length}',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 30.sp,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              );
-                            }
-                            return Text(
-                              '0',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 30.sp,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
+              _buildHeaderCard(),
               Expanded(
                 child: Padding(
                   padding: EdgeInsets.symmetric(vertical: 15.w),
@@ -107,13 +54,68 @@ class _UsersViewBody extends StatelessWidget {
     );
   }
 
+  Widget _buildHeaderCard() {
+    return BlocBuilder<UserCubit, UserState>(
+      builder: (context, state) {
+        int totalUsers = 0;
+        if (state is UserLoaded) {
+          totalUsers = state.totalCount;
+        }
+
+        return Container(
+          padding: EdgeInsets.symmetric(vertical: 15.h, horizontal: 20.w),
+          decoration: BoxDecoration(
+            color: const Color(0xFF5F5FF9),
+            borderRadius: BorderRadius.circular(15.r),
+          ),
+          child: Row(
+            children: [
+              CircleAvatar(
+                backgroundColor: Colors.white,
+                radius: 30.r,
+                child: Image.asset(
+                  ImageAssets.contactIcon,
+                  height: 40.h,
+                  width: 40.w,
+                  color: const Color(0xFF5F5FF9),
+                ),
+              ),
+              SizedBox(width: 15.w),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Users',
+                    style: TextStyle(color: Colors.white, fontSize: 14.sp),
+                  ),
+                  SizedBox(height: 10.h),
+                  Text(
+                    '$totalUsers',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 30.sp,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+  // استبدل دالة _buildFilters فقط في الـ UsersView
+
   Widget _buildFilters(BuildContext context) {
+    // ✅ استخدم BlocBuilder عشان الـ UI يتحدث مع كل تغيير
     return BlocBuilder<UserCubit, UserState>(
       builder: (context, state) {
         final cubit = context.read<UserCubit>();
 
         return Column(
           children: [
+            // Country Filter
             GestureDetector(
               onTap: () => _showCountryPicker(context),
               child: Container(
@@ -151,6 +153,8 @@ class _UsersViewBody extends StatelessWidget {
               ),
             ),
             SizedBox(height: 15.h),
+
+            // Search Field
             Container(
               width: double.infinity,
               padding: EdgeInsets.symmetric(horizontal: 15.w, vertical: 2.h),
@@ -172,6 +176,7 @@ class _UsersViewBody extends StatelessWidget {
                   ),
                 ),
                 onChanged: (value) {
+                  // ✅ هنا بنعمل update للـ search query
                   cubit.updateSearchQuery(value);
                 },
               ),
@@ -182,10 +187,12 @@ class _UsersViewBody extends StatelessWidget {
     );
   }
 
+  // ✅ تأكد من دالة _showCountryPicker
   Future<void> _showCountryPicker(BuildContext context) async {
     final cubit = context.read<UserCubit>();
 
     final List<Map<String, String>> countries = [
+      {'name': 'All', 'flag': '🌍'},
       {'name': 'Egypt', 'flag': '🇪🇬'},
       {'name': 'Saudi Arabia', 'flag': '🇸🇦'},
       {'name': 'UAE', 'flag': '🇦🇪'},
@@ -246,6 +253,7 @@ class _UsersViewBody extends StatelessWidget {
                       )
                     : null,
                 onTap: () {
+                  // ✅ هنا بنعمل update للـ country
                   cubit.updateCountry(country['name']!);
                   Navigator.pop(dialogContext);
                 },
@@ -345,6 +353,7 @@ class _UsersViewBody extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // Name and Username Row
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -369,7 +378,7 @@ class _UsersViewBody extends StatelessWidget {
                               borderRadius: BorderRadius.circular(4.r),
                             ),
                             child: Text(
-                              user.username,
+                              '@${user.username}',
                               style: TextStyle(
                                 fontSize: 12.sp,
                                 color: const Color(0xFF5F5FF9),
@@ -380,6 +389,8 @@ class _UsersViewBody extends StatelessWidget {
                         ],
                       ),
                       SizedBox(height: 8.h),
+
+                      // Phone
                       Row(
                         children: [
                           Icon(
@@ -401,6 +412,8 @@ class _UsersViewBody extends StatelessWidget {
                         ],
                       ),
                       SizedBox(height: 5.h),
+
+                      // Email
                       Row(
                         children: [
                           Icon(
@@ -421,24 +434,38 @@ class _UsersViewBody extends StatelessWidget {
                           ),
                         ],
                       ),
-                      if (user.country != null) ...[
-                        SizedBox(height: 5.h),
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.location_on_outlined,
-                              size: 14.sp,
-                              color: Colors.grey.shade600,
-                            ),
-                            SizedBox(width: 5.w),
-                            Text(
-                              user.country!,
-                              style: TextStyle(
-                                fontSize: 12.sp,
-                                color: const Color(0xff5E6171),
+
+                      // Provider Badge (if exists)
+                      if (user.provider != null) ...[
+                        SizedBox(height: 8.h),
+                        Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 8.w,
+                            vertical: 4.h,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.green.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(4.r),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.verified_user,
+                                size: 12.sp,
+                                color: Colors.green,
                               ),
-                            ),
-                          ],
+                              SizedBox(width: 4.w),
+                              Text(
+                                user.provider!.toUpperCase(),
+                                style: TextStyle(
+                                  fontSize: 10.sp,
+                                  color: Colors.green,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ],
@@ -455,44 +482,59 @@ class _UsersViewBody extends StatelessWidget {
   }
 
   Widget _buildPagination(BuildContext context) {
-    final cubit = context.read<UserCubit>();
+    return BlocBuilder<UserCubit, UserState>(
+      builder: (context, state) {
+        final cubit = context.read<UserCubit>();
+        final canGoBack = cubit.currentPage > 1;
+        final canGoForward = state is UserLoaded && state.users.isNotEmpty;
 
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 15.h),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          GestureDetector(
-            onTap: cubit.currentPage > 1
-                ? () => cubit.goToPreviousPage()
-                : null,
-            child: Icon(
-              Icons.arrow_back_ios_rounded,
-              color: cubit.currentPage > 1 ? Colors.grey : Colors.grey.shade300,
-            ),
+        return Padding(
+          padding: EdgeInsets.symmetric(vertical: 15.h),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Previous Page Button
+              GestureDetector(
+                onTap: canGoBack ? () => cubit.goToPreviousPage() : null,
+                child: Icon(
+                  Icons.arrow_back_ios_rounded,
+                  color: canGoBack ? Colors.grey : Colors.grey.shade300,
+                  size: 20.sp,
+                ),
+              ),
+              SizedBox(width: 10.w),
+
+              // Current Page Number
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(4.r),
+                  border: Border.all(color: Colors.grey),
+                ),
+                child: Text(
+                  '${cubit.currentPage}',
+                  style: TextStyle(
+                    color: Colors.black,
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              SizedBox(width: 10.w),
+
+              // Next Page Button
+              GestureDetector(
+                onTap: canGoForward ? () => cubit.goToNextPage() : null,
+                child: Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  color: canGoForward ? Colors.grey : Colors.grey.shade300,
+                  size: 20.sp,
+                ),
+              ),
+            ],
           ),
-          SizedBox(width: 10.w),
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(4.r),
-              border: Border.all(color: Colors.grey),
-            ),
-            child: Text(
-              '${cubit.currentPage}',
-              style: TextStyle(color: Colors.black, fontSize: 14.sp),
-            ),
-          ),
-          SizedBox(width: 10.w),
-          GestureDetector(
-            onTap: () => cubit.goToNextPage(),
-            child: const Icon(
-              Icons.arrow_forward_ios_rounded,
-              color: Colors.grey,
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

@@ -1,10 +1,12 @@
+import 'package:catalog_admin/core/api/api_consumer.dart';
+import 'package:catalog_admin/core/api/dio_consumer.dart';
 import 'package:catalog_admin/features/auth/data/datasources/auth_remote_datasource.dart';
 import 'package:catalog_admin/features/auth/data/repositories/auth_repository_impl.dart';
 import 'package:catalog_admin/features/auth/domain/repositories/auth_repository.dart';
 import 'package:catalog_admin/features/auth/presentation/cubit/auth_cubit.dart';
 import 'package:catalog_admin/core/database/cache/cache_helper.dart';
 import 'package:catalog_admin/features/dashboard/data/datasources/dashboard_remote_datasource.dart';
-import 'package:catalog_admin/features/dashboard/data/repositories/ashboard_repository_impl.dart';
+import 'package:catalog_admin/features/dashboard/data/repositories/dashboard_repository_impl.dart';
 import 'package:catalog_admin/features/dashboard/domain/repositories/ashboard_repository.dart';
 import 'package:catalog_admin/features/dashboard/presentation/cubit/dashboard_cubit.dart';
 import 'package:catalog_admin/features/payment/data/datasources/payment_remote_datasource.dart';
@@ -16,7 +18,7 @@ import 'package:catalog_admin/features/profile/data/repositories/profile_reposit
 import 'package:catalog_admin/features/profile/domain/repositories/profile_repository.dart';
 import 'package:catalog_admin/features/profile/presentation/cubit/profile_cubit.dart';
 import 'package:catalog_admin/features/promo/data/datasources/promo_remote_datasource.dart';
-import 'package:catalog_admin/features/promo/data/repositories/romo_repository_impl.dart';
+import 'package:catalog_admin/features/promo/data/repositories/promo_repository_impl.dart';
 import 'package:catalog_admin/features/promo/domain/repositories/promo_repository.dart';
 import 'package:catalog_admin/features/promo/presentation/cubit/promo_cubit.dart';
 import 'package:catalog_admin/features/subscription/data/datasources/subscription_remote_datasource.dart';
@@ -31,28 +33,23 @@ import 'package:catalog_admin/features/users/data/datasources/user_remote_dataso
 import 'package:catalog_admin/features/users/data/repositories/user_repository_impl.dart';
 import 'package:catalog_admin/features/users/domain/repositories/user_repository.dart';
 import 'package:catalog_admin/features/users/presentation/cubit/user_cubit.dart';
+import 'package:dio/dio.dart';
 import 'package:get_it/get_it.dart';
 
 final sl = GetIt.instance;
 
 Future<void> setup() async {
+  sl.registerLazySingleton<Dio>(() => Dio());
+  sl.registerLazySingleton<ApiConsumer>(() => DioConsumer(dio: sl<Dio>()));
   // ==================== Core ====================
   sl.registerLazySingleton<CacheHelper>(() => CacheHelper());
 
-  // TODO: Add Dio when backend is ready
-  // sl.registerLazySingleton<Dio>(() {
-  //   final dio = Dio(BaseOptions(
-  //     baseUrl: 'YOUR_BASE_URL',
-  //     connectTimeout: const Duration(seconds: 30),
-  //     receiveTimeout: const Duration(seconds: 30),
-  //   ));
-  //   return dio;
-  // });
-
   // ==================== Auth Feature ====================
-  // Data Sources
   sl.registerLazySingleton<AuthRemoteDataSource>(
-    () => AuthRemoteDataSourceImpl(cacheHelper: sl()),
+    () => AuthRemoteDataSourceImpl(
+      cacheHelper: sl(),
+      apiConsumer: sl(), // إضافة هذا
+    ),
   );
 
   // Repositories
@@ -66,7 +63,7 @@ Future<void> setup() async {
   // ==================== Dashboard Feature ====================
   // Data Sources
   sl.registerLazySingleton<DashboardRemoteDataSource>(
-    () => DashboardRemoteDataSourceImpl(),
+    () => DashboardRemoteDataSourceImpl(sl()),
   );
 
   // Repositories
@@ -80,7 +77,11 @@ Future<void> setup() async {
   // ==================== Profile Feature ====================
   // Data Sources
   sl.registerLazySingleton<ProfileRemoteDataSource>(
-    () => ProfileRemoteDataSourceImpl(cacheHelper: sl()),
+    () => ProfileRemoteDataSourceImpl(
+      cacheHelper: sl(),
+      apiConsumer: sl(),
+      authRepository: sl(),
+    ),
   );
 
   // Repositories
@@ -92,9 +93,9 @@ Future<void> setup() async {
   sl.registerFactory(() => ProfileCubit(repository: sl()));
 
   // ==================== Promo Code Feature ====================
-  // Data Sources
+  // Data Source
   sl.registerLazySingleton<PromoRemoteDataSource>(
-    () => PromoRemoteDataSourceImpl(),
+    () => PromoRemoteDataSourceImpl(apiConsumer: sl()),
   );
 
   // Repositories
@@ -131,21 +132,24 @@ Future<void> setup() async {
   sl.registerFactory(() => TransactionCubit(repository: sl()));
 
   // ==================== Users Feature ====================
+  // Cubit
+  sl.registerFactory(() => UserCubit(repository: sl()));
+
   // Data Sources
   sl.registerLazySingleton<UserRemoteDataSource>(
-    () => UserRemoteDataSourceImpl(),
+    () => UserRemoteDataSourceImpl(apiConsumer: sl()),
   );
 
   // Repositories
+
   sl.registerLazySingleton<UserRepository>(
     () => UserRepositoryImpl(remoteDataSource: sl()),
   );
-  sl.registerFactory(() => UserCubit(repository: sl()));
 
   // ==================== Subscriptions Feature ====================
   // Data Sources
   sl.registerLazySingleton<SubscriptionRemoteDataSource>(
-    () => SubscriptionRemoteDataSourceImpl(),
+    () => SubscriptionRemoteDataSourceImpl(apiConsumer: sl()),
   );
 
   // Repositories

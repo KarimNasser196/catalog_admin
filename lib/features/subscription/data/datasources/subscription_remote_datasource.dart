@@ -1,100 +1,55 @@
-// ========== subscription_remote_datasource.dart ==========
+// ==================== REMOTE DATA SOURCE ====================
+// lib/subscription/data/datasources/subscription_remote_datasource.dart
+
+import 'package:catalog_admin/core/api/api_consumer.dart';
+import 'package:catalog_admin/core/api/end_ponits.dart';
 import 'package:catalog_admin/features/subscription/data/models/subscription_model.dart';
 
 abstract class SubscriptionRemoteDataSource {
-  Future<List<SubscriptionModel>> getSubscriptions({
-    required String contentType,
-  });
-
+  Future<List<SubscriptionModel>> getSubscriptions({required int typeId});
   Future<void> updateSubscriptions({
-    required String contentType,
+    required int typeId,
     required List<SubscriptionModel> subscriptions,
   });
 }
 
 class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
-  // TODO: Add Dio instance when backend is ready
+  final ApiConsumer apiConsumer;
 
-  // In-memory storage grouped by content type
-  final Map<String, List<SubscriptionModel>> _storage = {
-    'Text Typing': [
-      const SubscriptionModel(
-        id: '1',
-        country: 'Egypt',
-        currency: 'EGP',
-        price: 50,
-      ),
-      const SubscriptionModel(
-        id: '2',
-        country: 'UAE',
-        currency: 'AED',
-        price: 30,
-      ),
-      const SubscriptionModel(
-        id: '3',
-        country: 'Kuwait',
-        currency: 'KWD',
-        price: 15,
-      ),
-    ],
-    'Image': [
-      const SubscriptionModel(
-        id: '4',
-        country: 'Egypt',
-        currency: 'EGP',
-        price: 100,
-      ),
-      const SubscriptionModel(
-        id: '5',
-        country: 'UAE',
-        currency: 'AED',
-        price: 60,
-      ),
-    ],
-    'Voice': [
-      const SubscriptionModel(
-        id: '6',
-        country: 'Egypt',
-        currency: 'EGP',
-        price: 75,
-      ),
-    ],
-    'Video': [
-      const SubscriptionModel(
-        id: '7',
-        country: 'Egypt',
-        currency: 'EGP',
-        price: 150,
-      ),
-    ],
-  };
+  SubscriptionRemoteDataSourceImpl({required this.apiConsumer});
 
   @override
   Future<List<SubscriptionModel>> getSubscriptions({
-    required String contentType,
+    required int typeId,
   }) async {
-    // TODO: Replace with actual API call
-    // final response = await _dio.get('/subscriptions/$contentType');
+    final response = await apiConsumer.get(EndPoint.pricing);
+    final pricingResponse = PricingResponseModel.fromJson(response);
 
-    await Future.delayed(const Duration(milliseconds: 500));
+    // Find the message type with the given typeId
+    final messageType = pricingResponse.messageTypes.firstWhere(
+      (type) => type.id == typeId,
+      orElse: () =>
+          MessageTypeModel(id: typeId, typeName: '', countryPrices: []),
+    );
 
-    // Return a copy of the list for the content type, or empty list if not found
-    return List<SubscriptionModel>.from(_storage[contentType] ?? []);
+    return messageType.countryPrices;
   }
 
   @override
   Future<void> updateSubscriptions({
-    required String contentType,
+    required int typeId,
     required List<SubscriptionModel> subscriptions,
   }) async {
-    // TODO: Replace with actual API call
-    // await _dio.put('/subscriptions/$contentType', data: {
-    //   'subscriptions': subscriptions.map((s) => s.toJson()).toList(),
-    // });
+    // Send as JSON (raw body based on Postman screenshot)
+    final data = {
+      'type_id': typeId,
+      'countries': subscriptions.map((sub) => sub.toJson()).toList(),
+    };
 
-    await Future.delayed(const Duration(milliseconds: 500));
-
-    // Update the in-memory storage
-    _storage[contentType] = List<SubscriptionModel>.from(subscriptions);
+    await apiConsumer.post(
+      EndPoint.pricing,
+      data: data,
+      isFormData: false, // JSON body
+    );
   }
 }

@@ -196,7 +196,7 @@ class _PromoViewBodyState extends State<PromoViewBody> {
                           builder: (context, state) {
                             if (state is PromoLoaded) {
                               return Text(
-                                '${state.promoCodes.length} Active Codes',
+                                '${state.promoCodes.length} promo Codes',
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontSize: 12.sp,

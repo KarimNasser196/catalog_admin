@@ -1,4 +1,5 @@
-// ========== user_repository_impl.dart ==========
+import 'package:catalog_admin/core/errors/exceptions.dart';
+import 'package:catalog_admin/core/errors/failure.dart';
 import 'package:catalog_admin/features/users/data/datasources/user_remote_datasource.dart';
 import 'package:catalog_admin/features/users/domain/entities/user_entity.dart';
 import 'package:catalog_admin/features/users/domain/repositories/user_repository.dart';
@@ -10,20 +11,24 @@ class UserRepositoryImpl implements UserRepository {
   UserRepositoryImpl({required this.remoteDataSource});
 
   @override
-  Future<Either<String, List<UserEntity>>> getUsers({
-    required String country,
+  Future<Either<Failure, List<UserEntity>>> getUsers({
+    String? country,
     String? searchQuery,
     int page = 1,
+    int perPage = 20,
   }) async {
     try {
-      final users = await remoteDataSource.getUsers(
+      final result = await remoteDataSource.getUsers(
         country: country,
         searchQuery: searchQuery,
         page: page,
+        perPage: perPage,
       );
-      return Right(users);
+      return Right(result.users);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.errorMessageModel.errorMessage));
     } catch (e) {
-      return Left('Failed to load users: ${e.toString()}');
+      return Left(ServerFailure(e.toString()));
     }
   }
 }

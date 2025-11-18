@@ -1,12 +1,9 @@
-// user_state.dart
-part of 'user_cubit.dart';
+// lib/users/presentation/cubit/user_state.dart
 
-abstract class UserState extends Equatable {
-  const UserState();
+import 'package:catalog_admin/features/users/domain/entities/user_entity.dart';
 
-  @override
-  List<Object> get props => [];
-}
+// ✅ امسح Equatable - ده السبب في إن الـ UI مش بيتحدث
+abstract class UserState {}
 
 class UserInitial extends UserState {}
 
@@ -14,18 +11,13 @@ class UserLoading extends UserState {}
 
 class UserLoaded extends UserState {
   final List<UserEntity> users;
+  final int totalCount;
 
-  const UserLoaded({required this.users});
-
-  @override
-  List<Object> get props => [users];
+  UserLoaded({required this.users, this.totalCount = 0});
 }
 
 class UserError extends UserState {
   final String message;
 
-  const UserError({required this.message});
-
-  @override
-  List<Object> get props => [message];
+  UserError({required this.message});
 }

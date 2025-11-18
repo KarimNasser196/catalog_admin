@@ -3,7 +3,6 @@ class PromoEntity {
   final String code;
   final double discountPercentage;
   final int usedCount;
-  final DateTime createdAt;
   final bool isActive;
 
   PromoEntity({
@@ -11,7 +10,6 @@ class PromoEntity {
     required this.code,
     required this.discountPercentage,
     required this.usedCount,
-    required this.createdAt,
     required this.isActive,
   });
 }

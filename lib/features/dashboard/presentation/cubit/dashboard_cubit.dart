@@ -18,7 +18,7 @@ class DashboardCubit extends Cubit<DashboardState> {
     final result = await repository.getDashboardStats();
 
     result.fold(
-      (error) => emit(DashboardError(message: error)),
+      (error) => emit(DashboardError(message: error.message)),
       (stats) => emit(DashboardLoaded(stats: stats)),
     );
   }

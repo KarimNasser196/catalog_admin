@@ -24,7 +24,7 @@ class AuthCubit extends Cubit<AuthState> {
     );
 
     result.fold(
-      (error) => emit(AuthError(message: error)),
+      (error) => emit(AuthError(message: error.message)),
       (auth) => emit(AuthAuthenticated(user: auth)),
     );
   }
@@ -35,7 +35,7 @@ class AuthCubit extends Cubit<AuthState> {
     final result = await repository.logout();
 
     result.fold(
-      (error) => emit(AuthError(message: error)),
+      (error) => emit(AuthError(message: error.message)),
       (_) => emit(AuthUnauthenticated()),
     );
   }

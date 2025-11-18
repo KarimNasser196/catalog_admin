@@ -1,11 +1,12 @@
+import 'package:catalog_admin/core/errors/failure.dart';
 import 'package:catalog_admin/features/promo/domain/entities/promo_entity.dart';
 import 'package:dartz/dartz.dart';
 
 abstract class PromoRepository {
-  Future<Either<String, List<PromoEntity>>> getAllPromoCodes();
-  Future<Either<String, PromoEntity>> createPromoCode({
+  Future<Either<Failure, List<PromoEntity>>> getAllPromoCodes();
+  Future<Either<Failure, PromoEntity>> createPromoCode({
     required double discountPercentage,
   });
-  Future<Either<String, bool>> deletePromoCode(String promoId);
-  Future<Either<String, bool>> togglePromoStatus(String promoId);
+  Future<Either<Failure, bool>> deletePromoCode(String promoId);
+  Future<Either<Failure, bool>> togglePromoStatus(String promoId);
 }

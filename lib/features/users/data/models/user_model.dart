@@ -1,4 +1,3 @@
-// ========== user_model.dart ==========
 import 'package:catalog_admin/features/users/domain/entities/user_entity.dart';
 
 class UserModel extends UserEntity {
@@ -8,17 +7,19 @@ class UserModel extends UserEntity {
     required super.username,
     required super.phone,
     required super.email,
-    super.country,
+    super.image,
+    super.provider,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
-      id: json['id'] ?? '',
+      id: json['id'] ?? 0,
       name: json['name'] ?? '',
-      username: json['username'] ?? '',
+      username: json['user_name'] ?? '', // API uses 'user_name'
       phone: json['phone'] ?? '',
       email: json['email'] ?? '',
-      country: json['country'],
+      image: json['image'],
+      provider: json['provider'],
     );
   }
 
@@ -26,10 +27,11 @@ class UserModel extends UserEntity {
     return {
       'id': id,
       'name': name,
-      'username': username,
+      'user_name': username,
       'phone': phone,
       'email': email,
-      'country': country,
+      'image': image,
+      'provider': provider,
     };
   }
 }
